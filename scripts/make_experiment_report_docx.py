@@ -5,11 +5,12 @@ from pathlib import Path
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx.shared import Inches, Pt
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs" / "智能驾驶车道二分类实验报告.docx"
+REPORT_ASSETS = ROOT / "docs" / "report_assets"
 
 
 def set_font(run, font_name: str = "宋体", size: int = 10) -> None:
@@ -60,6 +61,20 @@ def add_table(doc: Document, headers: list[str], rows: list[list[str]]) -> None:
         for index, value in enumerate(row):
             run = cells[index].paragraphs[0].add_run(value)
             set_font(run, "宋体", 9.5)
+
+
+def add_figure(doc: Document, image_path: Path, caption: str, width: float = 6.4) -> None:
+    if not image_path.exists():
+        add_paragraph(doc, f"图示缺失：{image_path}", first_line_indent=False)
+        return
+    paragraph = doc.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = paragraph.add_run()
+    run.add_picture(str(image_path), width=Inches(width))
+    caption_paragraph = doc.add_paragraph()
+    caption_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    caption_run = caption_paragraph.add_run(caption)
+    set_font(caption_run, "宋体", 9)
 
 
 def build_report() -> None:
@@ -273,6 +288,12 @@ python -m lane_binary_classifier.predict_onnx --onnx-model outputs\\toy_run\\lan
         doc,
         "TensorBoard 中记录了 train 与 val 两组指标，每组包含 loss、accuracy、precision、recall 和 F1。训练过程中 loss 整体下降，F1 和 accuracy 逐步上升，说明模型在该验证数据上学习到了区分车道内外的视觉模式。",
     )
+    add_figure(
+        doc,
+        REPORT_ASSETS / "tensorboard_tusimple_curves.png",
+        "图 1  TuSimple 真实训练过程 TensorBoard 曲线",
+        width=6.6,
+    )
 
     add_heading(doc, "6.2 TuSimple 真实数据训练与测试结果", 2)
     add_paragraph(
@@ -333,6 +354,12 @@ python -m lane_binary_classifier.predict_onnx --onnx-model outputs\\toy_run\\lan
     add_paragraph(
         doc,
         "ONNX Runtime 推理结果表明，导出的 lane_binary_classifier.onnx 可以脱离 PyTorch 独立运行。真实 test 集 in_lane 样本的 in_lane 概率为 0.9432，高于 0.5 阈值，因此预测为车道内；真实 test 集 out_lane 样本的 in_lane 概率接近 0，低于阈值，因此预测为车道外。这证明模型已完成从训练框架到部署推理格式的闭环验证。",
+    )
+    add_figure(
+        doc,
+        REPORT_ASSETS / "onnx_runtime_tusimple_examples.png",
+        "图 2  ONNX Runtime 在真实 test ROI 上的推理结果展示",
+        width=6.6,
     )
     add_code(
         doc,
