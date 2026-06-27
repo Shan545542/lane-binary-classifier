@@ -1,0 +1,12 @@
+{
+  "data_dir": "data/tusimple_binary",
+  "output_dir": "outputs/baseline",
+  "epochs": 20,
+  "batch_size": 32,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "image_width": 160,
+  "image_height": 96,
+  "dropout": 0.25,
+  "primary_metric": "validation_f1"
+}
