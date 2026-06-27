@@ -48,6 +48,12 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+The Word/PPT generation scripts use optional documentation dependencies. They are not required for model training or inference:
+
+```bash
+pip install -r requirements-docs.txt
+```
+
 如果使用 GPU，请按 PyTorch 官网说明安装匹配 CUDA 的 `torch` 版本。
 
 ## Quick Start With Toy Data
