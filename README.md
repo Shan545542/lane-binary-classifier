@@ -1,156 +1,236 @@
 # Lane Binary Classifier
 
-轻量级车道区域二分类模型：输入车载前视图像的局部 ROI，输出 `in_lane` 或 `out_lane`。项目面向智能驾驶课程作业，同时保持标准 GitHub 项目结构，方便后续补充实验报告、PPT、ONNX 导出和真实数据集训练结果。
+Lightweight lane in/out binary classifier for autonomous driving perception coursework.
 
-## Features
+The model receives a front-view road ROI image and predicts whether the ROI is inside the current lane area:
 
-- 轻量 CNN 二分类模型，适合课程级快速训练和解释
-- 支持 `ImageFolder` 风格数据集：`train/val` 下各有 `in_lane`、`out_lane`
-- 提供 TuSimple 标注转换脚本，可从开源车道线标注生成二分类 ROI 样本
-- 支持随机翻转、亮度增强、准确率、精确率、召回率、F1 指标
-- 支持 TensorBoard 记录训练过程
-- 支持 PyTorch checkpoint 推理、ONNX 导出和 ONNX Runtime 独立推理
-- 提供 toy 数据集生成脚本，用于无真实数据时快速跑通流程
+- `in_lane`: the ROI is centered on the current lane area.
+- `out_lane`: the ROI is shifted away from the current lane area.
 
-## Project Layout
+This project includes data conversion, training, evaluation, TensorBoard logging, ONNX export, and ONNX Runtime inference.
+
+## Results
+
+The final model was trained on binary ROI samples converted from the TuSimple lane dataset.
+
+| Split | Accuracy | Precision | Recall | F1 | Samples |
+|---|---:|---:|---:|---:|---:|
+| Validation | 0.9085 | 0.8254 | 0.9246 | 0.8722 | 1060 |
+| Test | 0.9665 | 0.9301 | 0.9732 | 0.9511 | 1224 |
+
+Test confusion matrix:
+
+| Metric | Count | Meaning |
+|---|---:|---|
+| TP | 399 | true `in_lane`, predicted `in_lane` |
+| TN | 784 | true `out_lane`, predicted `out_lane` |
+| FP | 30 | true `out_lane`, predicted `in_lane` |
+| FN | 11 | true `in_lane`, predicted `out_lane` |
+
+ONNX Runtime examples:
+
+- `in_lane`: `probability_in_lane=0.9432`
+- `out_lane`: `probability_in_lane=0.0000`
+
+## Project Structure
 
 ```text
 lane_binary_classifier/
-  src/lane_binary_classifier/
-    data.py            # 数据集、增强、DataLoader
-    metrics.py         # 二分类指标
-    model.py           # 轻量 CNN 模型
-    train.py           # 训练入口
-    predict.py         # 单图推理
-    export_onnx.py     # ONNX 导出
-    predict_onnx.py    # ONNX Runtime 推理
+  configs/
+    baseline.json
+  docs/
+    dataset_preparation.md
+    experiment_plan.md
+    github_upload.md
+    model_design.md
   scripts/
     make_toy_dataset.py
     prepare_tusimple_binary.py
+  src/lane_binary_classifier/
+    data.py
+    evaluate.py
+    export_onnx.py
+    metrics.py
+    model.py
+    predict.py
+    predict_onnx.py
+    train.py
   tests/
   requirements.txt
-  pyproject.toml
+  SUBMISSION.md
 ```
 
-更多说明：
+Large generated files are intentionally excluded from Git:
 
-- 数据集转换：`docs/dataset_preparation.md`
-- GitHub 上传：`docs/github_upload.md`
-- 模型设计：`docs/model_design.md`
-- 实验计划：`docs/experiment_plan.md`
+```text
+data/
+outputs/
+checkpoints/
+*.pt
+*.onnx
+.venv/
+```
 
-## Setup
+## Environment
 
-```bash
+Recommended:
+
+```text
+Python 3.12
+```
+
+The code supports Python `>=3.10`.
+
+Install runtime dependencies:
+
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\activate
 pip install -r requirements.txt
 pip install -e .
 ```
 
-The Word/PPT generation scripts use optional documentation dependencies. They are not required for model training or inference:
+Runtime dependencies:
 
-```bash
-pip install -r requirements-docs.txt
-```
-
-如果使用 GPU，请按 PyTorch 官网说明安装匹配 CUDA 的 `torch` 版本。
-
-## Quick Start With Toy Data
-
-先生成一个可训练的小型合成数据集：
-
-```bash
-python scripts/make_toy_dataset.py --output data/toy_lane --train-size 400 --val-size 80
-```
-
-训练模型：
-
-```bash
-python -m lane_binary_classifier.train ^
-  --data-dir data/toy_lane ^
-  --output-dir outputs/toy_run ^
-  --epochs 8 ^
-  --batch-size 32 ^
-  --tensorboard
-```
-
-单图推理：
-
-```bash
-python -m lane_binary_classifier.predict ^
-  --checkpoint outputs/toy_run/best.pt ^
-  --image data/toy_lane/val/in_lane/0000.png
-```
-
-导出 ONNX：
-
-```bash
-python -m lane_binary_classifier.export_onnx ^
-  --checkpoint outputs/toy_run/best.pt ^
-  --output outputs/toy_run/lane_binary_classifier.onnx
-```
-
-ONNX Runtime 推理：
-
-```bash
-python -m lane_binary_classifier.predict_onnx ^
-  --onnx-model outputs/toy_run/lane_binary_classifier.onnx ^
-  --image data/toy_lane/val/in_lane/0000.png
+```text
+torch
+numpy
+pillow
+tqdm
+tensorboard
+onnx
+onnxruntime
 ```
 
 ## Dataset Format
 
-训练脚本默认读取下面的目录结构：
+The training script expects an ImageFolder-style binary classification dataset:
 
 ```text
-data/my_lane_binary/
+data/tusimple_binary/
   train/
     in_lane/
-      xxx.png
     out_lane/
-      xxx.png
   val/
     in_lane/
-      xxx.png
     out_lane/
-      xxx.png
+  test/
+    in_lane/
+    out_lane/
 ```
 
-类别含义：
+## Convert TuSimple Labels
 
-- `in_lane`: ROI 中车辆当前位置位于可行驶车道区域内
-- `out_lane`: ROI 中车辆当前位置偏离当前车道区域，或 ROI 与目标车道中心明显错位
+Expected raw TuSimple layout:
 
-## Prepare TuSimple Binary Samples
-
-下载并解压 TuSimple lane detection 数据集后，可用脚本从官方 JSON line 标注生成 ROI 二分类样本：
-
-```bash
-python scripts/prepare_tusimple_binary.py ^
-  --tusimple-root D:\datasets\tusimple ^
-  --label-file D:\datasets\tusimple\train_set\label_data_0313.json ^
-  --split train ^
-  --output data/tusimple_binary
+```text
+D:\archive\TUSimple\train_set\
+  clips\
+  label_data_0313.json
+  label_data_0531.json
+  label_data_0601.json
 ```
 
-脚本会基于靠近车辆前方的参考横线估计左右车道线，生成一个正样本 crop 和若干左右偏移的负样本 crop。真实训练时建议把多个 label 文件都转换进同一个输出目录，并手动抽查部分样本质量。
+Convert training split:
 
-## Model
+```powershell
+python scripts\prepare_tusimple_binary.py --tusimple-root D:\archive\TUSimple\train_set --label-file D:\archive\TUSimple\train_set\label_data_0313.json --split train --output data\tusimple_binary
+```
 
-当前模型为 `LaneBinaryNet`：
+Convert validation split:
 
-- 4 个卷积块：Conv2d + BatchNorm + ReLU + MaxPool
-- Adaptive Average Pooling 汇聚空间特征
-- Dropout + Linear 输出单个 logit
-- 损失函数：`BCEWithLogitsLoss`
-- 阈值：`sigmoid(logit) >= 0.5` 判为 `in_lane`
+```powershell
+python scripts\prepare_tusimple_binary.py --tusimple-root D:\archive\TUSimple\train_set --label-file D:\archive\TUSimple\train_set\label_data_0531.json --split val --output data\tusimple_binary
+```
 
-该结构参数量小，训练速度快，适合作业中验证“基于局部 ROI 判断车道内/车道外”的基础可行性。
+Convert test split:
 
-## Next Milestones
+```powershell
+python scripts\prepare_tusimple_binary.py --tusimple-root D:\archive\TUSimple\train_set --label-file D:\archive\TUSimple\train_set\label_data_0601.json --split test --output data\tusimple_binary
+```
 
-- 用 TuSimple/CULane 子集生成真实训练集
-- 记录 TensorBoard 曲线截图
-- 导出 ONNX 并用 ONNX Runtime 做一次推理验证
-- 整理实验报告和 PPT：数据来源、模型结构、训练设置、指标、误差分析
+The converter estimates the current lane center from TuSimple lane-line annotations. A center crop becomes an `in_lane` sample, while left/right shifted crops become `out_lane` samples.
+
+## Train
+
+```powershell
+python -m lane_binary_classifier.train --data-dir data\tusimple_binary --output-dir outputs\tusimple_run --epochs 20 --batch-size 32 --tensorboard
+```
+
+Outputs:
+
+```text
+outputs/tusimple_run/
+  best.pt
+  last.pt
+  run_config.json
+  tensorboard/
+```
+
+`best.pt` is selected by validation F1. In the submitted experiment, the best checkpoint was from epoch 18.
+
+## View TensorBoard
+
+```powershell
+tensorboard --logdir outputs\tusimple_run\tensorboard
+```
+
+Open:
+
+```text
+http://localhost:6006/
+```
+
+Recorded metrics:
+
+- loss
+- accuracy
+- precision
+- recall
+- F1
+
+## Evaluate
+
+```powershell
+python -m lane_binary_classifier.evaluate --checkpoint outputs\tusimple_run\best.pt --data-dir data\tusimple_binary --split test --output outputs\tusimple_run\test_metrics.json
+```
+
+## Export ONNX
+
+```powershell
+python -m lane_binary_classifier.export_onnx --checkpoint outputs\tusimple_run\best.pt --output outputs\tusimple_run\lane_binary_classifier.onnx
+```
+
+## ONNX Runtime Inference
+
+```powershell
+python -m lane_binary_classifier.predict_onnx --onnx-model outputs\tusimple_run\lane_binary_classifier.onnx --image data\tusimple_binary\test\in_lane\clips_0601_1494452385593783358_20_center.png
+```
+
+Example output:
+
+```text
+class=in_lane probability_in_lane=0.9432 logit=2.8098 provider=CPUExecutionProvider
+```
+
+## Data Augmentation
+
+Training images use simple augmentations to improve generalization:
+
+- horizontal flip
+- brightness jitter
+- contrast jitter
+
+Validation and test images are not augmented.
+
+## Notes
+
+The submitted package also includes:
+
+- Word experiment report
+- PPT design document
+- exported ONNX model
+- test metrics JSON
+- run configuration JSON
+
+See `SUBMISSION.md` for the exact commands and dependency summary.
