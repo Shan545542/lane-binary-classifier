@@ -11,6 +11,7 @@ from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs" / "智能驾驶车道二分类PPT设计文档.pptx"
+REPORT_ASSETS = ROOT / "docs" / "report_assets"
 
 WIDE_WIDTH = Inches(13.333)
 WIDE_HEIGHT = Inches(7.5)
@@ -428,6 +429,21 @@ contrast = uniform(0.8, 1.2)
 
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(slide)
+    add_title(slide, "TensorBoard 曲线展示", "TuSimple 真实训练过程：loss、F1、accuracy、precision / recall")
+    add_image_or_placeholder(
+        slide,
+        REPORT_ASSETS / "tensorboard_tusimple_curves.png",
+        Inches(0.75),
+        Inches(1.32),
+        Inches(11.85),
+        Inches(5.9),
+        "TensorBoard curves",
+    )
+    add_footer(slide, 8)
+
+
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide)
     add_title(slide, "ONNX 导出与 ONNX Runtime 推理", "验证模型可脱离 PyTorch 独立运行")
     add_flow(
         slide,
@@ -459,7 +475,33 @@ python -m lane_binary_classifier.predict_onnx ^
         Inches(5.75),
         Inches(2.65),
     )
-    add_footer(slide, 8)
+    add_footer(slide, 9)
+
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide)
+    add_title(slide, "ONNX Runtime 结果展示", "真实 test ROI 上的正确预测与典型 FP 误判样例")
+    add_image_or_placeholder(
+        slide,
+        REPORT_ASSETS / "onnx_runtime_tusimple_examples.png",
+        Inches(0.75),
+        Inches(1.42),
+        Inches(11.85),
+        Inches(4.32),
+        "ONNX Runtime examples",
+    )
+    add_bullets(
+        slide,
+        [
+            "绿色边框：预测正确样例；橙色边框：FP 误判样例。",
+            "该页用于展示 ONNX Runtime 已经能脱离 PyTorch 独立完成真实图片推理。",
+        ],
+        Inches(1.0),
+        Inches(5.95),
+        Inches(11.3),
+        Inches(0.7),
+        14,
+    )
+    add_footer(slide, 10)
 
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(slide)
@@ -485,7 +527,7 @@ python -m lane_binary_classifier.predict_onnx ^
         Inches(1.4),
         14,
     )
-    add_footer(slide, 9)
+    add_footer(slide, 11)
 
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(slide)
@@ -503,7 +545,7 @@ python -m lane_binary_classifier.predict_onnx ^
         add_label(slide, str(idx), Inches(1.05), y, Inches(0.35), Inches(0.35), BLUE, 10)
         add_bullets(slide, [f"{problem} → {solution}"], Inches(1.55), y - Inches(0.03), Inches(10.5), Inches(0.42), 13)
         y += Inches(0.75)
-    add_footer(slide, 10)
+    add_footer(slide, 12)
 
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(slide)
@@ -528,7 +570,7 @@ python -m lane_binary_classifier.predict_onnx ^
         Inches(3.4),
         14,
     )
-    add_footer(slide, 11)
+    add_footer(slide, 13)
 
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(slide)
@@ -553,7 +595,7 @@ python -m lane_binary_classifier.predict_onnx ^
         Inches(3.4),
         14,
     )
-    add_footer(slide, 12)
+    add_footer(slide, 14)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     prs.save(OUTPUT)
