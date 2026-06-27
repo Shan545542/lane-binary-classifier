@@ -81,7 +81,7 @@ def build_report() -> None:
 
     add_paragraph(
         doc,
-        "说明：本文档为当前阶段实验报告初稿。Toy 数据集已完成完整流程验证；TuSimple 开源车道线数据集下载完成后，可将真实数据训练结果、TensorBoard 截图和误差分析补入对应章节。",
+        "说明：本文档为当前阶段实验报告正式版。实验已完成 Toy 数据集流程验证，并基于 TuSimple 开源车道线数据集完成真实数据训练、测试、TensorBoard 记录、ONNX 导出和 ONNX Runtime 推理验证。",
         first_line_indent=False,
     )
 
@@ -237,7 +237,7 @@ if random.random() < 0.3:
         "根据验证集 F1 保存最优模型 best.pt，同时保存最后一轮模型 last.pt。",
         "将 best.pt 导出为 ONNX 格式，得到 lane_binary_classifier.onnx。",
         "使用 ONNX Runtime 加载 ONNX 模型，对单张 ROI 图片进行独立推理验证。",
-        "等待 TuSimple 下载完成后，使用 prepare_tusimple_binary.py 将开源车道线数据转换成正式二分类 ROI 数据集，并重新训练模型。",
+        "使用 prepare_tusimple_binary.py 将 TuSimple 开源车道线数据转换成正式二分类 ROI 数据集，并完成真实数据训练与测试。",
     ]
     for step in steps:
         add_bullet(doc, step)
@@ -277,7 +277,7 @@ python -m lane_binary_classifier.predict_onnx --onnx-model outputs\\toy_run\\lan
     add_heading(doc, "6.2 TuSimple 真实数据训练与测试结果", 2)
     add_paragraph(
         doc,
-        "TuSimple 数据集下载完成后，实验使用 label_data_0313.json 生成训练集，使用 label_data_0531.json 生成验证集，使用 label_data_0601.json 生成独立测试集。转换后训练集包含 2857 个 in_lane 样本和 5642 个 out_lane 样本；验证集包含 358 个 in_lane 样本和 702 个 out_lane 样本；测试集包含 410 个 in_lane 样本和 814 个 out_lane 样本。",
+        "TuSimple 数据集下载并解压后，实验使用 label_data_0313.json 生成训练集，使用 label_data_0531.json 生成验证集，使用 label_data_0601.json 生成独立测试集。转换后训练集包含 2857 个 in_lane 样本和 5642 个 out_lane 样本；验证集包含 358 个 in_lane 样本和 702 个 out_lane 样本；测试集包含 410 个 in_lane 样本和 814 个 out_lane 样本。",
     )
     add_table(
         doc,
@@ -397,11 +397,11 @@ target = 1 if probability >= args.threshold else 0
     add_heading(doc, "九、总结与下一阶段工作", 1)
     add_paragraph(
         doc,
-        "本实验完成了车道区域二分类模型的设计与工程实现。当前阶段已跑通 toy 数据集训练、TensorBoard 记录、PyTorch checkpoint 保存、ONNX 导出和 ONNX Runtime 独立推理，证明该方案具备完整的训练到部署验证流程。模型采用轻量 CNN 结构，能够基于车辆前方 ROI 对车道内外状态进行快速判断。",
+        "本实验完成了车道区域二分类模型的设计与工程实现，并已基于 TuSimple 开源车道线数据集完成正式训练、验证和测试。实验流程包括 TuSimple JSON 标注解析、ROI 二分类样本构建、轻量 CNN 训练、TensorBoard 记录、PyTorch checkpoint 保存、ONNX 导出和 ONNX Runtime 独立推理。最终模型在独立测试集上取得 accuracy 0.9665、precision 0.9301、recall 0.9732、F1 0.9511，说明该方案能够较稳定地完成车道内外 ROI 判断。",
     )
     add_paragraph(
         doc,
-        "下一阶段将使用 TuSimple 开源车道线数据集进行正式训练。具体工作包括：完成数据下载与解压；使用转换脚本生成 train/val 二分类 ROI 数据；手动抽查样本质量；重新训练模型并记录 TensorBoard 曲线；导出真实数据训练得到的 ONNX 模型；补充真实数据指标、截图和误差分析。进一步还可以尝试 MobileNetV3、ResNet18 等轻量骨干网络，比较不同 ROI 尺寸、负样本偏移距离和增强策略对最终 F1 分数的影响。",
+        "下一阶段工作不再是接入 TuSimple，而是在当前真实数据实验基础上继续优化模型鲁棒性和部署表现。可进一步补充更多误差样例截图，重点分析 FP 样本，即真实为 out_lane 但被误判为 in_lane 的情况；尝试调整分类阈值以降低误判风险；比较不同 ROI 尺寸、y_ref 参考位置和负样本偏移距离对指标的影响；增加阴影、模糊、雨雾、强光等增强策略；尝试 MobileNetV3、ResNet18 等轻量骨干网络；并统计 ONNX Runtime 推理耗时，为后续边缘部署提供依据。",
     )
 
     add_heading(doc, "十、附录：正式 TuSimple 训练命令", 1)
