@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tusimple-root", required=True, help="Root directory containing TuSimple images.")
     parser.add_argument("--label-file", required=True, help="TuSimple JSON-lines label file.")
     parser.add_argument("--output", default="data/tusimple_binary")
-    parser.add_argument("--split", choices=["train", "val"], default="train")
+    parser.add_argument("--split", choices=["train", "val", "test"], default="train")
     parser.add_argument("--crop-width", type=int, default=320)
     parser.add_argument("--crop-height", type=int, default=192)
     parser.add_argument("--resize-width", type=int, default=160)

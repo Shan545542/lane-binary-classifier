@@ -12,6 +12,7 @@ data/
 runs/
 outputs/
 checkpoints/
+deliverables/
 *.pt
 *.pth
 *.onnx

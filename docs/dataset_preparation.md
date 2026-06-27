@@ -52,10 +52,22 @@ python scripts\prepare_tusimple_binary.py --tusimple-root D:\datasets\tusimple\t
 python scripts\prepare_tusimple_binary.py --tusimple-root D:\datasets\tusimple\train_set --label-file D:\datasets\tusimple\train_set\label_data_0531.json --split val --output data\tusimple_binary
 ```
 
+Optionally convert a held-out test split:
+
+```powershell
+python scripts\prepare_tusimple_binary.py --tusimple-root D:\datasets\tusimple\train_set --label-file D:\datasets\tusimple\train_set\label_data_0601.json --split test --output data\tusimple_binary
+```
+
 ## Train On Converted Data
 
 ```powershell
 python -m lane_binary_classifier.train --data-dir data\tusimple_binary --output-dir outputs\tusimple_run --epochs 20 --batch-size 32 --tensorboard
+```
+
+Evaluate the best checkpoint:
+
+```powershell
+python -m lane_binary_classifier.evaluate --checkpoint outputs\tusimple_run\best.pt --data-dir data\tusimple_binary --split test --output outputs\tusimple_run\test_metrics.json
 ```
 
 ## Export And Deploy Check

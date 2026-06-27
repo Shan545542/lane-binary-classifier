@@ -6,3 +6,4 @@ tensorboard>=2.15
 onnx>=1.16
 onnxscript>=0.3
 onnxruntime>=1.17
+python-pptx>=1.0
